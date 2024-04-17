@@ -3,38 +3,38 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:layout_margin="10dp"
+    android:orientation="vertical"
     tools:context=".ui.MainActivity">
 
     <Button
         android:id="@+id/btn_ff"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAllCaps="false"
-        android:text="Fast-Follow" />
+        android:text="Fast-Follow"
+        android:textAllCaps="false" />
 
     <Button
         android:id="@+id/btn_od"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAllCaps="false"
-        android:text="On-Demand" />
+        android:text="On-Demand"
+        android:textAllCaps="false" />
 
     <Button
         android:id="@+id/btn_watch_video"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:text="Watch Video"
         android:textAllCaps="false"
-        android:text="Watch Video" />
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/btn_play_audio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:text="Play Audio"
         android:textAllCaps="false"
-        android:text="Play Audio" />
+        android:visibility="gone" />
 
 </LinearLayout>

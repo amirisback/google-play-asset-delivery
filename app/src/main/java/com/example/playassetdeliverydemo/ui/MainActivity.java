@@ -23,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.playassetdeliverydemo.R;
 import com.example.playassetdeliverydemo.customviews.CustomProgressDialog;
 import com.example.playassetdeliverydemo.helper.Utils;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.play.core.assetpacks.AssetPackLocation;
 import com.google.android.play.core.assetpacks.AssetPackManager;
 import com.google.android.play.core.assetpacks.AssetPackManagerFactory;
@@ -30,9 +31,6 @@ import com.google.android.play.core.assetpacks.AssetPackState;
 import com.google.android.play.core.assetpacks.AssetPackStateUpdateListener;
 import com.google.android.play.core.assetpacks.AssetPackStates;
 import com.google.android.play.core.assetpacks.model.AssetPackStatus;
-import com.google.android.play.core.tasks.OnCompleteListener;
-import com.google.android.play.core.tasks.OnSuccessListener;
-import com.google.android.play.core.tasks.Task;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -44,7 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     private AssetManager assetManager;
     private InputStream inputStream = null;
@@ -87,50 +85,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_watch_video = findViewById(R.id.btn_watch_video);
         btnPlayAudio = findViewById(R.id.btn_play_audio);
 
-        btn_ff.setOnClickListener(this);
-        btn_od.setOnClickListener(this);
-        btn_watch_video.setOnClickListener(this);
-        btnPlayAudio.setOnClickListener(this);
+        btn_ff.setOnClickListener(v -> {
+            dialog.showProgresDialog();
+
+            isFastFollow = true;
+            isOnDemand = false;
+            initAssetPackManager();
+        });
+
+        btn_od.setOnClickListener(v -> {
+            dialog.showProgresDialog();
+
+            isFastFollow = false;
+            isOnDemand = true;
+            initAssetPackManager();
+        });
+
+        btn_watch_video.setOnClickListener(v -> {
+            dialog.showProgresDialog();
+            if (isPermissionGranted()) {
+                getInputStreamFromAssetManager(videoFileName);
+            }
+        });
+
+        btnPlayAudio.setOnClickListener(v -> {
+            showAlertDialog();
+        });
+
 
         if (dialog == null) {
             dialog = new CustomProgressDialog(this);
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.btn_ff: {
-                dialog.showProgresDialog();
-
-                isFastFollow = true;
-                isOnDemand = false;
-                initAssetPackManager();
-                break;
-            }
-
-            case R.id.btn_od: {
-                dialog.showProgresDialog();
-
-                isFastFollow = false;
-                isOnDemand = true;
-                initAssetPackManager();
-                break;
-            }
-
-            case R.id.btn_play_audio: {
-                showAlertDialog();
-                break;
-            }
-
-            case R.id.btn_watch_video: {
-                dialog.showProgresDialog();
-                if (isPermissionGranted()) {
-                    getInputStreamFromAssetManager(videoFileName);
-                }
-                break;
-            }
-
         }
     }
 
@@ -467,39 +451,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void getPackStates(String assetPackName) {
         assetPackManager.getPackStates(Collections.singletonList(assetPackName))
-                .addOnCompleteListener(new OnCompleteListener<AssetPackStates>() {
-                    @Override
-                    public void onComplete(Task<AssetPackStates> task) {
-                        AssetPackStates assetPackStates;
-                        try {
-                            assetPackStates = task.getResult();
-                            assetPackState =
-                                    assetPackStates.packStates().get(assetPackName);
+                .addOnCompleteListener(task -> {
+                    AssetPackStates assetPackStates;
+                    try {
+                        assetPackStates = task.getResult();
+                        assetPackState =
+                                assetPackStates.packStates().get(assetPackName);
 
-                            if (assetPackState != null) {
-                                if (assetPackState.status() == AssetPackStatus.WAITING_FOR_WIFI) {
-                                    totalSizeToDownloadInBytes = assetPackState.totalBytesToDownload();
-                                    if (totalSizeToDownloadInBytes > 0) {
-                                        long sizeInMb = totalSizeToDownloadInBytes / (1024 * 1024);
-                                        if (sizeInMb >= 150) {
-                                            showWifiConfirmationDialog();
-                                        } else {
-                                            registerListener();
-                                        }
+                        if (assetPackState != null) {
+                            if (assetPackState.status() == AssetPackStatus.WAITING_FOR_WIFI) {
+                                totalSizeToDownloadInBytes = assetPackState.totalBytesToDownload();
+                                if (totalSizeToDownloadInBytes > 0) {
+                                    long sizeInMb = totalSizeToDownloadInBytes / (1024 * 1024);
+                                    if (sizeInMb >= 150) {
+                                        showWifiConfirmationDialog();
+                                    } else {
+                                        registerListener();
                                     }
                                 }
-
-                                Log.d(TAG, "status: " + assetPackState.status() +
-                                        ", name: " + assetPackState.name() +
-                                        ", errorCode: " + assetPackState.errorCode() +
-                                        ", bytesDownloaded: " + assetPackState.bytesDownloaded() +
-                                        ", totalBytesToDownload: " + assetPackState.totalBytesToDownload() +
-                                        ", transferProgressPercentage: " + assetPackState.transferProgressPercentage());
                             }
-                        } catch (Exception e) {
-                            dialog.hideProgresDialog();
-                            Log.d("MainActivity", e.getMessage());
+
+                            Log.d(TAG, "status: " + assetPackState.status() +
+                                    ", name: " + assetPackState.name() +
+                                    ", errorCode: " + assetPackState.errorCode() +
+                                    ", bytesDownloaded: " + assetPackState.bytesDownloaded() +
+                                    ", totalBytesToDownload: " + assetPackState.totalBytesToDownload() +
+                                    ", transferProgressPercentage: " + assetPackState.transferProgressPercentage());
                         }
+                    } catch (Exception e) {
+                        dialog.hideProgresDialog();
+                        Log.d("MainActivity", e.getMessage());
                     }
                 });
     }
@@ -520,8 +501,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         String assetsFolderPath = assetPackPath.assetsPath();
         // equivalent to: FilenameUtils.concat(assetPackPath.path(), "assets");
-        String assetPath = FilenameUtils.concat(assetsFolderPath, relativeAssetPath);
-        return assetPath;
+        return FilenameUtils.concat(assetsFolderPath, relativeAssetPath);
     }
 
 
